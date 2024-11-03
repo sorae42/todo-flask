@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Todo App with Python Flask API</title>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+            crossorigin="anonymous"
+        />
+    </head>
+    <body class="d-flex justify-content-center">
+        <style>
+            button {
+                border: 1px solid rgba(27, 31, 35, 0.15);
+                border-radius: 6px;
+                box-shadow: rgba(27, 31, 35, 0.1) 0 1px 0;
+                box-sizing: border-box;
+                color: #fff;
+                cursor: pointer;
+                display: inline-block;
+                font-size: 14px;
+                font-weight: 600;
+                line-height: 20px;
+                padding: 6px 16px;
+                text-align: center;
+                white-space: nowrap;
+            }
+
+            button:hover {
+                background-color: #2c974b;
+            }
+
+            button:active {
+                background-color: #298e46;
+                box-shadow: rgba(20, 70, 32, 0.2) 0 1px 0 inset;
+            }
+
+            #tasklist > .list-item {
+                margin-top: 10px;
+                padding: 10px;
+                border-radius: 4px;
+                background-color: #f5f5f5;
+                border: 1px solid rgba(27, 31, 35, 0.15);
+
+                display: flex;
+                justify-content: space-between;
+            }
+
+            #tasklist > .list-item:nth-child(even) {
+                background-color: #f9f9f9;
+            }
+        </style>
+
+        <div class="w-75">
+            <h1>Todo Task list</h1>
+            <div class="d-inline-block w-100">
+                <form id="taskForm">
+                    <input
+                        type="text"
+                        name="item"
+                        id="taskInput"
+                        class="w-100 my-2"
+                        placeholder="Enter a task"
+                    />
+                    <button
+                        type="submit"
+                        class="w-100"
+                        style="background-color: #2ea44f"
+                    >
+                        Add Task
+                    </button>
+                </form>
+            </div>
+            <div id="tasklist"></div>
+        </div>
+
+        <script>
+            // Fetch tasks from API
+            function fetchTasks() {
+                fetch("/items/all")
+                    .then((response) => response.json())
+                    .then((tasks) => {
+                        let taskList = document.getElementById("tasklist");
+                        taskList.innerHTML = "";
+                        if (tasks.count == 0) {
+                            taskList.innerHTML =
+                                "<div class='list-item text-center'>No task found. Add something!!</div>";
+                            return;
+                        }
+                        tasks.items.forEach((task) => {
+                            let taskItem = document.createElement("div");
+                            taskItem.classList.add("list-item");
+                            taskItem.innerHTML = `
+                            <span>${task[1]} - ${task[2]}</span>
+                            <span>
+                                <button onclick="completeTask('${task[0]}', '${task[2]}')" style="background-color:#2e88a4">Change Status</button>
+                                <button onclick="deleteTask('${task[0]}')" style="background-color:#df0909">Delete</button>
+                            </span>`;
+                            taskList.appendChild(taskItem);
+                        });
+                    });
+            }
+
+            // Add new task to API
+            document
+                .getElementById("taskForm")
+                .addEventListener("submit", (event) => {
+                    event.preventDefault();
+                    let taskInput = document.getElementById("taskInput");
+                    fetch("/new", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            item: taskInput.value,
+                        }),
+                    })
+                        .then((response) => response.json())
+                        .then((result) => {
+                            taskInput.value = "";
+                            fetchTasks();
+                        });
+                });
+
+            // Complete task
+            function completeTask(task, status) {
+                fetch(`/item/update`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        item: task,
+                        status:
+                            status.toLowerCase() === "in progress"
+                                ? "completed"
+                                : "in progress",
+                    }),
+                })
+                    .then((response) => response.json())
+                    .then((result) => {
+                        fetchTasks();
+                    });
+            }
+
+            // Delete task
+            function deleteTask(task) {
+                fetch(`/item/remove`, {
+                    method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        item: task,
+                    }),
+                })
+                    .then((response) => response.json())
+                    .then((result) => {
+                        fetchTasks();
+                    });
+            }
+
+            // Fetch tasks on page load
+            window.onload = function () {
+                fetchTasks();
+            };
+
+            fetchTasks();
+        </script>
+        <script
+            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+            crossorigin="anonymous"
+        ></script>
+    </body>
+</html>
