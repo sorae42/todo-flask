@@ -1,5 +1,13 @@
-CREATE TABLE "items" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "item" TEXT NOT NULL,
-    "status" TEXT NOT NULL
+CREATE TABLE accounts (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL
+);
+
+CREATE TABLE items (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    item TEXT NOT NULL,
+    status TEXT NOT NULL,
+    posted_by INTEGER NOT NULL,
+    FOREIGN KEY (posted_by) REFERENCES accounts (id)
 );

@@ -5,12 +5,37 @@ INPROGRESS = "In Progress"
 COMPLETED = "Completed"
 FAILED = "Failed"
 
-
-def add_to_item(items):
+def check_login(username, password):
     try:
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
-        c.execute("INSERT INTO items(item, status) values (?, ?)", (items, INPROGRESS))
+        c.execute("SELECT * FROM accounts WHERE username=? AND password=?", (username, password))
+        user_data = c.fetchone()
+        return user_data[0] if user_data else None
+    except Exception as e:
+        print(e)
+        return None
+
+def register_user(username, password):
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM accounts WHERE username=?", (username,))
+        if c.fetchone() is not None:
+            return False
+
+        c.execute("INSERT INTO accounts (username, password) VALUES (?, ?)", (username, password))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(e)
+        return False
+
+def add_to_item(items, user_id):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute("INSERT INTO items(item, status, posted_by) values (?, ?, ?)", (items, INPROGRESS, user_id))
         conn.commit()
         return {"item": items, "status": INPROGRESS}
     except Exception as e:
@@ -18,11 +43,11 @@ def add_to_item(items):
         return None
 
 
-def get_all_items():
+def get_all_items(user_id):
     try:
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
-        c.execute("select * from items")
+        c.execute("select * from items where posted_by='%s'" % user_id)
         rows = c.fetchall()
         return {"count": len(rows), "items": rows}
     except Exception as e:

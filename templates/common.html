@@ -55,7 +55,10 @@
         </style>
 
         <div class="w-75">
-            <h1>Todo Task list</h1>
+            <div class="d-flex justify-content-between align-items-center">
+                <h1>Todo Task list</h1>
+                <a href="/logout"><button class="text-dark">Logout</button></a>
+            </div>
             <div class="d-inline-block w-100">
                 <form id="taskForm">
                     <input
@@ -78,14 +81,37 @@
         </div>
 
         <script>
+            function checkAuthentication() {
+                const cookies = document.cookie.split("; ");
+                let token = null;
+
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].split("=");
+                    if (cookie[0] === "token") {
+                        token = cookie[1];
+                        break;
+                    }
+                }
+
+                if (!token) {
+                    //window.location.href = "/auth";
+                }
+                return token;
+            }
+
             // Fetch tasks from API
             function fetchTasks() {
-                fetch("/items/all")
+                const token = checkAuthentication();
+                fetch("/items/all", {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                })
                     .then((response) => response.json())
                     .then((tasks) => {
                         let taskList = document.getElementById("tasklist");
                         taskList.innerHTML = "";
-                        if (tasks.count == 0) {
+                        if (tasks == null || tasks.count == 0) {
                             taskList.innerHTML =
                                 "<div class='list-item text-center'>No task found. Add something!!</div>";
                             return;
@@ -94,11 +120,11 @@
                             let taskItem = document.createElement("div");
                             taskItem.classList.add("list-item");
                             taskItem.innerHTML = `
-                            <span>${task[1]} - ${task[2]}</span>
-                            <span>
-                                <button onclick="completeTask('${task[0]}', '${task[2]}')" style="background-color:#2e88a4">Change Status</button>
-                                <button onclick="deleteTask('${task[0]}')" style="background-color:#df0909">Delete</button>
-                            </span>`;
+                        <span>${task[1]} - ${task[2]}</span>
+                        <span>
+                            <button onclick="completeTask('${task[0]}', '${task[2]}')" style="background-color:#2e88a4">Change Status</button>
+                            <button onclick="deleteTask('${task[0]}')" style="background-color:#df0909">Delete</button>
+                        </span>`;
                             taskList.appendChild(taskItem);
                         });
                     });
@@ -109,15 +135,15 @@
                 .getElementById("taskForm")
                 .addEventListener("submit", (event) => {
                     event.preventDefault();
+                    const token = checkAuthentication();
                     let taskInput = document.getElementById("taskInput");
                     fetch("/new", {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
                         },
-                        body: JSON.stringify({
-                            item: taskInput.value,
-                        }),
+                        body: JSON.stringify({ item: taskInput.value }),
                     })
                         .then((response) => response.json())
                         .then((result) => {
@@ -128,10 +154,12 @@
 
             // Complete task
             function completeTask(task, status) {
+                const token = checkAuthentication();
                 fetch(`/item/update`, {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
                     },
                     body: JSON.stringify({
                         item: task,
@@ -149,14 +177,14 @@
 
             // Delete task
             function deleteTask(task) {
+                const token = checkAuthentication();
                 fetch(`/item/remove`, {
                     method: "DELETE",
                     headers: {
                         "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
                     },
-                    body: JSON.stringify({
-                        item: task,
-                    }),
+                    body: JSON.stringify({ item: task }),
                 })
                     .then((response) => response.json())
                     .then((result) => {
@@ -168,8 +196,6 @@
             window.onload = function () {
                 fetchTasks();
             };
-
-            fetchTasks();
         </script>
         <script
             src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
