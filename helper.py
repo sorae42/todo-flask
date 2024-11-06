@@ -6,6 +6,8 @@ COMPLETED = "Completed"
 FAILED = "Failed"
 
 def check_login(username, password):
+    if not username or not password:
+        return False
     try:
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
@@ -17,8 +19,10 @@ def check_login(username, password):
         return None
 
 def register_user(username, password):
-    conn = sqlite3.connect(DB_PATH)
+    if not username or not password:
+        return False
     try:
+        conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
         c.execute("SELECT * FROM accounts WHERE username=?", (username,))
         if c.fetchone() is not None:
@@ -37,7 +41,7 @@ def add_to_item(items, user_id):
         c = conn.cursor()
         c.execute("INSERT INTO items(item, status, posted_by) values (?, ?, ?)", (items, INPROGRESS, user_id))
         conn.commit()
-        return {"item": items, "status": INPROGRESS}
+        return {"id": c.lastrowid, "item": items, "status": INPROGRESS}
     except Exception as e:
         print(e)
         return None

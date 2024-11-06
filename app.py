@@ -53,7 +53,7 @@ def auth():
         if credentials_data is not None:
             token = generate_token({"userid": credentials_data, "username": username})
             response = make_response(jsonify({"success": True}), 200)
-            response.set_cookie("token", token, httponly=True, secure=True)
+            response.set_cookie("token", token)
             return response
         else:
             return jsonify({"error": "Invalid credentials"}), 401
